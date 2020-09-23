@@ -4,6 +4,13 @@ $countIx = 0;
 $xml = new XMLReader();
 $xml->open('./uploads/Oberbauch.xml');
 
+/**
+ * To use xmlReader easily we have to make sure we parse
+ * at the outermost level of repeating elements.
+ * This is because xmlReaders next() option does not behave as
+ * one would think by intuition
+ */
+
 while($xml->read() && $xml->name != 'PrintProtocol')
 {
     ;
@@ -11,16 +18,16 @@ while($xml->read() && $xml->name != 'PrintProtocol')
 
 while($xml->name == 'PrintProtocol')
 {
-    $element = new SimpleXMLElement($xml->readOuterXML()); //
+    $element = new SimpleXMLElement($xml->readInnerXML()); //
 
     $prod = array(
-        'name' => strval($element->ProtHeaderInfo->HeaderProtPath),
-        'TA' => strval($element->ProtHeaderInfo->HeaderProperty),
+        'name' => strval($element->SubStep->ProtHeaderInfo->HeaderProtPath),
+        'TA' => strval($element->SubStep->ProtHeaderInfo->HeaderProperty),
     );
 
     $target_elements = array('Schichten', 'Phasenkod.-Richt.', 'FoV Auslese', 'TR', 'TE');
 
-    foreach ($element->Card as $card) {
+    foreach ($element->SubStep->Card as $card) {
         foreach ($card->ProtParameter as $seq_property) {
             if (in_array(strval($seq_property->Label), $target_elements)) {
                 $label = strval($seq_property->Label);
