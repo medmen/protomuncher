@@ -4,12 +4,12 @@ $countIx = 0;
 $xml = new XMLReader();
 $xml->open('./uploads/Oberbauch.xml');
 
-while($xml->read() && $xml->name != 'SubStep')
+while($xml->read() && $xml->name != 'PrintProtocol')
 {
     ;
 }
 
-while($xml->name == 'SubStep')
+while($xml->name == 'PrintProtocol')
 {
     $element = new SimpleXMLElement($xml->readOuterXML()); //
 
@@ -20,11 +20,13 @@ while($xml->name == 'SubStep')
 
     $target_elements = array('Schichten', 'Phasenkod.-Richt.', 'FoV Auslese', 'TR', 'TE');
 
-    foreach ($element->Card->ProdParameter as $seq_property) {
-        if(in_array(strval($seq_property->label), $target_elements)){
-            $label = strval($seq_property->label);
-            $value = strval($seq_property->ValueAndUnit);
-            $prod[$label] = $value;
+    foreach ($element->Card as $card) {
+        foreach ($card->ProtParameter as $seq_property) {
+            if (in_array(strval($seq_property->Label), $target_elements)) {
+                $label = strval($seq_property->Label);
+                $value = strval($seq_property->ValueAndUnit);
+                $prod[$label] = $value;
+            }
         }
     }
 
@@ -33,7 +35,7 @@ while($xml->name == 'SubStep')
     print "\n";
     $countIx++;
 
-    $xml->next('ProtHeaderInfo');
+    $xml->next('PrintProtocol');
     unset($element);
 }
 
