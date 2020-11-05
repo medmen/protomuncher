@@ -1,74 +1,133 @@
 <?php
-$countIx = 0;
+namespace protomuncher;
 
-$xml = new XMLReader();
-$xml->open('./uploads/Oberbauch.xml');
-
-/**
- * To use xmlReader easily we have to make sure we parse
- * at the outermost level of repeating elements.
- * This is because xmlReaders next() option does not behave as
- * one would think by intuition
- */
-
-while($xml->read() && $xml->name != 'PrintProtocol')
+class MRIXmlParser
 {
-    ;
-}
+    private $countIx, $target_elements, $file, $outer_tag, $field_arr;
 
-while($xml->name == 'PrintProtocol')
-{
-    $element = new SimpleXMLElement($xml->readInnerXML()); //
+    function __construct()
+    {
+        $this->target_elements = array('Schichten', 'Phasenkod.-Richt.', 'FoV Auslese', 'TR', 'TE');
+        $this->countIx = 0; // count lines
+        $this->outer_tag = 'PrintProtocol';
+        $this->field_arr = array();
+        $this->format = 'md'; // parse to markdown by default
+    }
 
-    $prod = array(
-        'name' => strval($element->SubStep->ProtHeaderInfo->HeaderProtPath),
-        'TA' => strval($element->SubStep->ProtHeaderInfo->HeaderProperty),
-    );
 
-    $target_elements = array('Schichten', 'Phasenkod.-Richt.', 'FoV Auslese', 'TR', 'TE');
+    public function extract_data($file = './uploads/USER_protokolle.xml')
+    {
+        $this->file = $file;
+        $xml = new \XMLReader();
+        $xml->open($this->file);
 
-    foreach ($element->SubStep->Card as $card) {
-        foreach ($card->ProtParameter as $seq_property) {
-            if (in_array(strval($seq_property->Label), $target_elements)) {
-                $label = strval($seq_property->Label);
-                $value = strval($seq_property->ValueAndUnit);
-                $prod[$label] = $value;
-            }
+        /**
+         * To use xmlReader easily we have to make sure we parse
+         * at the outermost level of repeating elements.
+         */
+
+        while ($xml->read() && $xml->name != $this->outer_tag) {
+            ;
         }
+
+        while ($xml->name == $this->outer_tag) {
+            $element = new \SimpleXMLElement($xml->readInnerXML()); //
+
+            $proto_path = explode('\\', strval($element->SubStep->ProtHeaderInfo->HeaderProtPath));
+
+            $this->field_arr[$this->countIx] = array(
+                'region' => $proto_path[3],
+                'protocol' => $proto_path[4] . '-' . $proto_path[5],
+                'sequence' => $proto_path[6],
+                'TA' => strval($element->SubStep->ProtHeaderInfo->HeaderProperty),
+            );
+
+            foreach ($element->SubStep->Card as $card) {
+                foreach ($card->ProtParameter as $seq_property) {
+                    if (in_array(strval($seq_property->Label), $this->target_elements)) {
+                        $label = strval($seq_property->Label);
+                        $value = strval($seq_property->ValueAndUnit);
+                        $this->field_arr[$this->countIx][$label] = $value;
+                    }
+                }
+            }
+
+            // if($this->countIx == 4 ) break;
+
+            $this->countIx++;
+
+            $xml->next('PrintProtocol');
+            unset($element);
+        }
+
+        $xml->close();
+
+        return ($this->field_arr);
     }
 
+    public function format_pretty($field_arr)
+    {
+        if (empty($field_arr)) {
+            return false;
+        }
+        if (is_array($field_arr) and count($field_arr) < 4) {
+            return false;
+        }
+        if (!$old_protocol) {
+            $old_protocol = '';
+        }
+        if (!$old_region) {
+            $old_region = '';
+        }
 
-    print_r($prod);
-    print "\n";
-    $countIx++;
+        $pretty = '';
+        $valid_formats = array(
+            'md', // markdown
+            'html' //
+        );
 
-    $xml->next('PrintProtocol');
-    unset($element);
-}
+        if (!in_array($format, $valid_formats)) {
+            throw new \http\Exception\InvalidArgumentException('invalid format: ' . $format);
+        }
 
-print "Number of items=$countIx\n";
-print "memory_get_usage() =" . memory_get_usage()/1024 . "kb\n";
-print "memory_get_usage(true) =" . memory_get_usage(true)/1024 . "kb\n";
-print "memory_get_peak_usage() =" . memory_get_peak_usage()/1024 . "kb\n";
-print "memory_get_peak_usage(true) =" . memory_get_peak_usage(true)/1024 . "kb\n";
+        $headers_arr = array_keys($data);
 
-print "custom memory_get_process_usage() =" . memory_get_process_usage() . "kb\n";
+        switch ($format) {
+            case 'html':
+                if ($data['region'] !== $old_region) {
+                    $pretty .= '<h1>' . $data['region'] . '</h1>';
+                    $old_region = $data['region'];
+                    $old_protocol = '';
+                }
 
+                if ($data['protocol'] !== $old_protocol) {
+                    $pretty .= '</table>' . PHP_EOL;
+                    $pretty .= '<h2>' . $data['protocol'] . '</h2>' . PHP_EOL;
+                    $pretty .= '<table>.PHP_EOL<thead>.PHP_EOL<tr><th>' . implode('</th><th>', $headers_arr) . '</th></tr>.PHP_EOL</thead>.PHP_EOL<tfoot>a nice footer</tfoot>' . PHP_EOL;
+                }
+                $pretty .= '<tr><td>' . implode('</td>' . PHP_EOL . '<td>', $data) . '</td></tr>' . PHP_EOL;
+                break;
+            case 'md':
+            default:
+                if ($data['region'] !== $old_region) {
+                    $pretty .= '====== ' . $data['region'] . ' ======' . PHP_EOL;
+                    $old_region = $data['region'];
+                    $old_protocol = '';
+                }
 
-$xml->close();
+                if ($data['protocol'] !== $old_protocol) {
+                    $pretty .= '===== ' . $data['protocol'] . ' =====' . PHP_EOL;
+                    $pretty .= '^ ' . implode(' ^ ', $headers_arr) . ' ^' . PHP_EOL;
+                }
+                $pretty .= '|' . implode(' | ', $data) . ' |' . PHP_EOL;
+                break;
+        }
+        return ($pretty);
 
-/**
-* Returns memory usage from /proc<PID>/status in bytes.
-*
-* @return int|bool sum of VmRSS and VmSwap in bytes. On error returns false.
-*/
-function memory_get_process_usage() {
-    $status = file_get_contents('/proc/' . getmypid() . '/status');
-    $matchArr = array();
-    preg_match_all('~^(VmRSS|VmSwap):\s*([0-9]+).*$~im', $status, $matchArr);
-    if(!isset($matchArr[2][0]) || !isset($matchArr[2][1])) {
-        return false;
     }
 
-    return intval($matchArr[2][0]) + intval($matchArr[2][1]);
 }
+
+$pa = new MRIXmlParser();
+$res = $pa->extract_data();
+print_r($res);
