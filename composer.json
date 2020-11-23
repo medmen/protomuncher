@@ -1,0 +1,23 @@
+{
+  "name": "medmen/protomuncher",
+  "description": "transform CT/MRI protocols of SIEMENS machines in pdf/xml into human readable printouts",
+  "minimum-stability": "stable",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "medmen",
+      "email": "med-men@gmx.net"
+    }
+  ],
+  "require": {
+    "hhxsv5/php-sse": "~2.0",
+    "monolog/monolog":  "~2.0",
+    "tonchik-tm/pdf-to-html": "~1",
+    "mgargano/simplehtmldom": "~1.5",
+    "catfan/medoo": "~1.7.10",
+    "mlaphp/mlaphp": "~1.1.0"
+  },
+  "autoload": {
+    "psr-4": {"protomuncher\\": "src/"}
+  }
+}

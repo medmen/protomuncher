@@ -1,7 +1,7 @@
 <?php
 namespace protomuncher;
 
-class MRIXmlParser
+class mrixmlparser
 {
     private $countIx, $target_elements, $file, $outer_tag, $field_arr;
 
@@ -51,8 +51,6 @@ class MRIXmlParser
                     }
                 }
             }
-
-            // if($this->countIx == 4 ) break;
 
             $this->countIx++;
 

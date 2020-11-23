@@ -1,4 +1,6 @@
 <?php
+namespace protomuncher;
+
 /**
  * @package ProtoMuncher
  * @author Alexander "galak" Schuster
@@ -25,6 +27,40 @@
  * @TODO: automatic cleanup after conversion
  * @TODO: detect numer of files automagically when conf_limit_files is left empty
   **/
+
+class ctpdfparser{
+    private $conf;
+
+    public function __construct()
+    {
+        $this->conf['base_filename'] = 'CT_ScanProtocols_cleaned';
+        $this->conf['base_fileextension'] = 'html';
+        $this->conf['limit_files'] = '';
+        $this->conf['valid_entries'] = array('bereich', 'serienbeschreibung','(eff.) mas', 'ctdivol', 'pitch', 'koll.',  'inkrement', 'kern', 'fenster');
+        $this->conf['write_big_file'] = true;
+        $this->conf['debug'] = false;
+
+        // override conf settings if desired
+        $this::getConf();
+
+    }
+
+    /**
+     * @param mixed $conf
+     */
+    public function setConf($conf): void
+    {
+        $this->conf = $conf;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getConf()
+    {
+        return $this->conf;
+    }
+}
 
 // set filename to parse, can be complete filename without dot and suffix, e.g. "Abdomen-1"
 // or something like "Abdomen-" if you wish to parse more than 1 file (usually the case) 
