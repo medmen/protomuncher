@@ -28,7 +28,7 @@ namespace protomuncher;
  * @TODO: detect numer of files automagically when conf_limit_files is left empty
   **/
 
-class ctpdfparser{
+class Ctpdfparser{
     private $conf;
 
     public function __construct()

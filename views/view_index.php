@@ -1,13 +1,3 @@
-<html lang="de">
-<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-	<title>Protomuncher - MRT-Protokoll-Exorzist </title>
-	<script type="text/javascript" src="./js/jquery-2.1.4.min.js"></script>
-	<script type="text/javascript" src="./js/handle_upload.js"></script>
-	<link rel="stylesheet" href="main.css">
-</head>
-
-<body>
 <aside class="hidden">
 	<h1>Protomuncher</h1>
 	<h2>was macht das?</h2>
@@ -24,16 +14,16 @@
 		</p>
 		<h3>Step 3 - Reduce HTML</h3>
 		<p class="help">
-		We have gained a large complex HTML file <br />
-		Next step will include some magic (assisted by the simple_html_dom project) to 
-		<ul>
+We have gained a large complex HTML file <br />
+		Next step will include some magic (assisted by the simple_html_dom project) to
+<ul>
 			<li>find the wanted data based on the selection you make below</li>
 			<li>extract this data in a structure called "array"</li>
 			<li>re-assemble it in a new table, surroundings can be configured as you like</li>
 		</ul>
 		</p>
 		<h3>Step 4 - Clean-Up & Enjoy</h3>
-		<p> all uploaded and converted files will be expunged<br> 
+		<p> all uploaded and converted files will be expunged<br>
 		exciting isn't it?
 		</p>
 </aside>
@@ -45,7 +35,7 @@
 </section>
 
 <section>
-	<form action="../src/controller/upload.php" method="post" id="form_fileupload" name="form_fileupload" enctype="multipart/form-data">
+	<form action="upload.php" method="post" id="form_fileupload" name="form_fileupload" enctype="multipart/form-data">
 		<p>
 			<input type="hidden" name="step" value="2">
 			<input type="file" name="inputpdf" size="50" maxlength="100000" accept="application/pdf application/xml" required><br>
@@ -53,7 +43,3 @@
 		</p>
 	</form>
 </section>
-
-
-</body>
-</html>

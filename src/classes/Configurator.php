@@ -3,7 +3,7 @@ namespace protomuncher;
 
 use Medoo\Medoo;
 
-class configurator
+class Configurator
 {
     private $db, $cnf, $success;
 

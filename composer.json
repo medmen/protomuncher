@@ -17,6 +17,9 @@
     "catfan/medoo": "~1.7.10",
     "mlaphp/mlaphp": "~1.1.0"
   },
+  "require-dev": {
+    "phpunit/phpunit": "^9"
+  },
   "autoload": {
     "psr-4": {"protomuncher\\": "src/"}
   }
