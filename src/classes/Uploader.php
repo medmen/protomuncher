@@ -103,7 +103,7 @@ class Uploader
 
     }
 
-    private function get_mimetype()
+    public function get_mimetype()
     {
         $this->mimetype = mime_content_type($this->request['tmp_name']);
         switch($this->mimetype) {
@@ -119,14 +119,15 @@ class Uploader
         }
     }
 
+
     public function get_failure(){
         return $this->error_message;
     }
 
-    public function get_mimetype() {
-        return $this->mimetype;
+    public function get_modality()
+    {
+        return $this->request['modality'];
     }
-
 
     public function do_upoad()
     {

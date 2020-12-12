@@ -16,9 +16,14 @@ if($result === false) {
         'failure' => $uploader->get_failure()
     ));
 } else {
-    switch ($uploader->get_mimetype) {
-        case '':
+    switch ($uploader->get_mimetype()) {
+        case 'pdf':
+
             break;
+        case 'xml':
+
+            break;
+
         default:
             $response->setVars(array(
                 'failure' => array(0 => 'wrong mimetype for upload')

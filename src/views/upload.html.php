@@ -9,6 +9,12 @@ include('header.html.php');
     enctype="multipart/form-data">
     <p>
         <input type="hidden" name="step" value="2">
+        <input type="radio" name="ct" id="modlity" value="ct">
+        <label for="ct">CT</label><br>
+
+        <input type="radio" name="mrt" id="modylity" value="mrt">
+        <label for="mrt">MRT</label><br>
+
         <input type="file" name="inputpdf" size="50" maxlength="100000" accept="application/pdf application/xml" required><br>
         <input type="submit" name="upload" value="Protokoll hochladen">
     </p>
