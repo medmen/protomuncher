@@ -1,0 +1,8 @@
+<phpunit bootstrap="./public/setup.php">
+    <testsuites>
+        <testsuite name="protomuncher test suite">
+            <directory>./tests/</directory>
+        </testsuite>
+    </testsuites>
+
+</phpunit>
