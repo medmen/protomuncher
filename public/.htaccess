@@ -1,0 +1,10 @@
+# enable rewrite
+RewriteEngine On
+
+# empty requests go to front.php
+RewriteRule ^$ front.php [QSA]
+
+# all files and dirs not in this root reroute to front
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ front.php [QSA,L]
