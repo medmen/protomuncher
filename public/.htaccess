@@ -8,3 +8,7 @@ RewriteRule ^$ front.php [QSA]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ front.php [QSA,L]
+
+# we need to deal with potentially large file uploads
+php_value post_max_size 100M
+php_value upload_max_filesize 100M

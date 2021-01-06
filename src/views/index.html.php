@@ -12,17 +12,17 @@ include('header.html.php');
 
 <section>
     <form
-            action="<?php echo htmlspecialchars($request->server['PHP_SELF'] . '/upload', ENT_QUOTES, 'UTF-8'); ?>"
+            action="<?php echo htmlspecialchars($this->esc($url_path) . 'upload.php', ENT_QUOTES, 'UTF-8'); ?>"
             method="post"
             id="form_fileupload"
             name="form_fileupload"
             enctype="multipart/form-data">
         <p>
             <input type="hidden" name="step" value="2">
-            <input type="radio" name="ct" id="modlity" value="ct">
+            <input type="radio" name="modality" id="ct" value="ct">
             <label for="ct">CT</label><br>
 
-            <input type="radio" name="mrt" id="modylity" value="mrt">
+            <input type="radio" name="modality" id="mrt" value="mrt">
             <label for="mrt">MRT</label><br>
 
             <input type="file" name="inputpdf" size="50" maxlength="100000" accept="application/pdf,application/xml"

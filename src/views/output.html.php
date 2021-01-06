@@ -10,7 +10,7 @@ if ($failure) {
     echo "</p>";
 } else {
     echo "<h2 class=success>Erfolg</h2>";
-    echo "<p> Umwandlung erfolgreich. Hier das Ergebnis:<br>";
+    echo "<p> Umwandlung der " . $this->esc(strtoupper($filetype)) . "-Datei erfolgreich. Hier das Ergebnis:<br>";
     echo "<pre>$this->esc($res)</pre>";
     echo "</p>";
 }

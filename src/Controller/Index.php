@@ -1,5 +1,4 @@
 <?php
-
 namespace protomuncher\Controller;
 
 use Mlaphp\Request;
