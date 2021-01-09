@@ -6,6 +6,7 @@ namespace protomuncher\Controller;
 use Mlaphp\Request;
 use Mlaphp\Response;
 use protomuncher\classes\Uploader;
+use protomuncher\Formatter;
 
 class Upload
 {
@@ -28,31 +29,23 @@ class Upload
         $this->response->setView('output.html.php');
 
         $result = $this->uploader->do_upload();
+
         if ($result['success'] === false) {
             $this->response->setVars(array(
                 'failure' => $this->uploader->get_failure()
             ));
-        } else {
-            //@TODO: better use match(PHP8) here?
-            switch ($result['filetype']) {
-                case 'pdf':
-                    $this->response->setVars(array(
-                        'filetype' => 'pdf'
-                    ));
-                    break;
-
-                case 'xml':
-                    $this->response->setVars(array(
-                        'filetype' => 'xml'
-                    ));
-                    break;
-
-                default:
-                    $this->response->setVars(array(
-                        'failure' => array(0 => 'wrong filetype for upload')
-                    ));
-            }
+            return $this->response;
         }
-        return $this->response;
+
+        $converter = new Converter($result);
+        $raw_data_array = $converter->convert();
+
+        $formatter = new Formatter('md');
+
+        $this->response->setVars(array(
+            'success' => 'erfolgreich verwandelt --- magisch !!!',
+            'res' => $formatter->format_pretty($raw_data_array),
+        ));
+
     }
 }

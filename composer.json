@@ -11,9 +11,9 @@
   ],
   "require": {
     "hhxsv5/php-sse": "~2.0",
-    "monolog/monolog":  "~2.0",
+    "monolog/monolog": "~2.0",
     "tonchik-tm/pdf-to-html": "~1",
-    "mgargano/simplehtmldom": "~1.5",
+    "kub-at/php-simple-html-dom-parser": "~1.9.1",
     "catfan/medoo": "~1.7.10",
     "mlaphp/mlaphp": "~1.1.0"
   },
