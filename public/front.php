@@ -14,6 +14,6 @@ $route = $router->match($path);
 
 require($route);
 
-// invoke controller and send response
+// invoke controller and send response - wiring controller and response is
 $response = $controller->__invoke();
 $response->send();

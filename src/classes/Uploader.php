@@ -3,29 +3,20 @@ declare(strict_types=1);
 namespace protomuncher\classes;
 
 use Mlaphp\Request;
-use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 
 class Uploader
 {
-    private $logger, $maxfilesize, $uploadtarget, $mimetype, $error_message;
+    private $logger, $maxfilesize, $uploadtarget, $filetype, $error_message, $logger;
 
-    public function __construct(Request $request)
+    public function __construct(Request $request, Logger $logger)
     {
         $this->modality = $request->post['modality'];
         $this->request = $request->files['inputpdf'];
-        $this->logger = new Logger('logger');
-        $this->logger->pushHandler(new StreamHandler(dirname(__DIR__) . '/../log/test_app.log', Logger::DEBUG));
-        // $this->logger->pushHandler(new FirePHPHandler());
+        $this->logger = $logger;
         $this->logger->notice('Logger is now Ready in class ' . __CLASS__);
-
-        // @TODO: replace by configurable max value
-        $this->maxfilesize = $this->file_upload_max_size();
-        // @TODO: replace by configurable value
-        $this->mimetype = $this->get_mimetype();
-        $this->filetype = $this->get_filetype();
-        $this->uploadtarget = dirname(__DIR__) . '/../uploads/target.' . $this->filetype;
         $this->error_message = array();
+        $this::set_maxfilesize();
     }
 
     private function file_upload_max_size()
@@ -137,31 +128,37 @@ class Uploader
 
     }
 
-    private function get_mimetype(): string
+    private function set_filetype(): string
     {
-        return (mime_content_type($this->request['tmp_name']));
+        $mimetype = strval(mime_content_type($this->request['tmp_name'])); // may return false on error, be sure to cast as string
+        $this->filetype = substr(strrchr($mimetype, '/'), 1); // if mimetype holds a slash (/) return everything behind
     }
 
-    private function get_filetype()
+    private function is_valid_filetype(): bool
     {
         $allowed_filetypes = array('pdf', 'xml');
-        $this->filetype = substr(strrchr($this->mimetype, '/'), 1);
-        if (!in_array($this->filetype, $allowed_filetypes)) {
-            $this->logger->error('upload ' . $this->request['name'] . ' is not of supported file type but ' . str_replace('/', '_', $this->filetype));
-            $this->error_message[] = 'upload ' . $this->request['name'] . ' is not of supported file type';
-            return false;
+        if (isset($this->filetype) and in_array($this->filetype, $allowed_filetypes)) {
+            return true;
         }
-        return ($this->filetype);
+        $this->logger->error('upload ' . $this->request['name'] . ' is not of supported file type but ' . str_replace('/', '_', $this->filetype));
+        $this->error_message[] = 'upload ' . $this->request['name'] . ' is not of supported file type';
+        return false;
+    }
+
+    private function set_maxfilesize(): void
+    {
+        // @TODO: replace by configurable max value
+        $this->maxfilesize = $this->file_upload_max_size();
+    }
+
+    private function set_upload_target(): void
+    {
+        $this->uploadtarget = dirname(__DIR__) . '/../uploads/target.' . $this->filetype;
     }
 
     public function get_failure(): array
     {
         return $this->error_message;
-    }
-
-    public function get_modality(): string
-    {
-        return $this->modality;
     }
 
     public function do_upload(): array
@@ -173,10 +170,13 @@ class Uploader
         if (false == $this::is_valid_upload()) {
             return (['success' => false]);
         }
+        $this::set_filetype();
 
-        if (false == $this::get_filetype()) {
+        if (false == $this::is_valid_filetype()) {
             return (['success' => false]);
         }
+
+        $this::set_upload_target();
 
         // @Important: this must be called AFTER all other checks
         if (false == $this::move_upload()) {

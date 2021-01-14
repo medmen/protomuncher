@@ -5,18 +5,24 @@ namespace protomuncher\Controller;
 
 use Mlaphp\Request;
 use Mlaphp\Response;
+use Monolog\Logger;
 use protomuncher\classes\Uploader;
+use protomuncher\Converter;
 use protomuncher\Formatter;
+
+// use protomuncher\ConverterDataObject;
 
 class Upload
 {
-    protected $request, $response, $uploader;
+    protected $request, $response, $uploader, $logger;
 
-    public function __construct(Request $request, Response $response, Uploader $uploader)
+    public function __construct(Request $request, Response $response, Uploader $uploader, Logger $logger)
     {
         $this->request = $request;
         $this->response = $response;
         $this->uploader = $uploader;
+        $this->logger = $logger;
+        $this->logger->notice('Logger is now Ready in class ' . __CLASS__);
     }
 
     public function __invoke(): Response
@@ -37,15 +43,17 @@ class Upload
             return $this->response;
         }
 
-        $converter = new Converter($result);
+        // $result holds all necessary data (we hope) - cnvert that into a data object???
+        //$converter_data = new ConverterDataObject($result);
+
+        $converter = new Converter($result, $logger);
         $raw_data_array = $converter->convert();
 
-        $formatter = new Formatter('md');
+        $formatter = new Formatter('md', $logger);
 
         $this->response->setVars(array(
             'success' => 'erfolgreich verwandelt --- magisch !!!',
             'res' => $formatter->format_pretty($raw_data_array),
         ));
-
     }
 }
