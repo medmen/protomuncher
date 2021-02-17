@@ -1,15 +1,18 @@
 <?php
 namespace protomuncher;
-require_once(__DIR__.'/../vendor/autoload.php');
-use Medoo\Medoo; //we need db
+require_once(__DIR__ . '/../vendor/autoload.php');
+
+use Medoo\Medoo;
+
+//we need db
 
 // Initialize
 $database = new Medoo([
     'database_type' => 'sqlite',
-    'database_file' => __DIR__.'/../conf/config.sqlite'
+    'database_file' => __DIR__ . '/../conf/config.sqlite'
 ]);
 
-$configurator = new \protomuncher\configurator($database);
+$configurator = new Configurator($database);
 $status = $message = '';
 
 if(isset($_POST['save_conf'])) {
@@ -26,13 +29,13 @@ if(isset($_POST['save_conf'])) {
 
 <html lang="de">
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-	<title>Protomuncher - Konfigurator </title>
-	<link rel="stylesheet" href="main.css">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Protomuncher - Konfigurator </title>
+    <link rel="stylesheet" href="css/main.css">
 </head>
 
 <body>
-    <section class="<?php echo $status;?>">
+<section class="<?php echo $status;?>">
         <h2><?php echo $message;?></h2>
     </section>
 

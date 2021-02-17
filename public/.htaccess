@@ -1,0 +1,14 @@
+# enable rewrite
+RewriteEngine On
+
+# empty requests go to front.php
+RewriteRule ^$ front.php [QSA]
+
+# all files and dirs not in this root reroute to front
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ front.php [QSA,L]
+
+# we need to deal with potentially large file uploads
+php_value post_max_size 100M
+php_value upload_max_filesize 100M
