@@ -1,12 +1,17 @@
 <?php
+declare(strict_types=1);
 
-namespace protomuncher;
+namespace protomuncher\classes;
+
+use ErrorException;
+use http\Exception\InvalidArgumentException;
+use Monolog\Logger;
 
 class Formatter
 {
     private $format, $old_protocol, $old_region, $pretty;
 
-    function __construct($format)
+    function __construct($format, Logger $logger)
     {
         $valid_formats = array(
             'md', // markdown
@@ -14,25 +19,27 @@ class Formatter
         );
 
         if (!in_array($format, $valid_formats)) {
-            throw new \http\Exception\InvalidArgumentException('invalid format: ' . $format);
+            throw new InvalidArgumentException('invalid format: ' . $format);
         }
         $this->format = $format;
+        $this->logger = $logger;
+        $this->logger->notice('Logger is now Ready in class ' . __CLASS__);
     }
 
-    public function format_pretty($field_arr)
+    public function format_pretty($field_arr): array
     {
         try {
             if (empty($field_arr)) {
-                throw new \ErrorException('missing argument');
+                throw new ErrorException('missing argument');
             }
             if (is_array($field_arr) and count($field_arr) < 4) {
-                throw new \ErrorException('missing argument');
+                throw new ErrorException('missing argument');
             }
-        } catch (\ErrorException $e) {
+        } catch (ErrorException $e) {
             return array('success' => false,
-                        'message' => $e->getMessage()
-                );
-        };
+                'message' => $e->getMessage()
+            );
+        }
 
 
         if (!$this->old_protocol) {
@@ -46,7 +53,7 @@ class Formatter
 
         $headers_arr = array_keys($data);
 
-        switch ($format) {
+        switch ($this->format) {
             case 'html':
                 if ($data['region'] !== $old_region) {
                     $pretty .= '<h1>' . $data['region'] . '</h1>';
@@ -76,8 +83,10 @@ class Formatter
                 $pretty .= '|' . implode(' | ', $data) . ' |' . PHP_EOL;
                 break;
         }
-        return ($pretty);
-
+        return array('success' => true,
+            'message' => 'Formatierung der Rohdaten als ' . $this->format . ' erfolgreich',
+            'data' => $pretty
+        );
     }
 
 
