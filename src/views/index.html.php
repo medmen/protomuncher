@@ -5,7 +5,8 @@ include('header.html.php');
     <p>
         Bitte laden sie das gewünschte Protokoll hoch (pdf oder xml sind erlaubt)<br>
         Standardmäßig wird das gesamte Protokoll ausgelesen und die voreingestellten Parameter extrahiert.<br>
-        Sollten sie abweichende Wünsche haben, rufen sie bitte zuerst den <a href="./configurator">Konfigurator</a> auf.<br>
+        Sollten sie abweichende Wünsche haben, rufen sie bitte zuerst den <a href="./configurator.php">Konfigurator</a>
+        auf.<br>
         Für Hilfe und weitere Informationen klicken Sie einfach <a href="./" onclick="toggleVisibility(about)">hier</a>.
     </p>
 </section>
@@ -18,11 +19,10 @@ include('header.html.php');
             name="form_fileupload"
             enctype="multipart/form-data">
         <p>
-            <input type="hidden" name="step" value="2">
-            <input type="radio" name="modality" id="ct" value="ct">
+            <input type="radio" name="geraet" id="ct" value="2">
             <label for="ct">CT</label><br>
 
-            <input type="radio" name="modality" id="mrt" value="mrt">
+            <input type="radio" name="geraet" id="mrt" value="1">
             <label for="mrt">MRT</label><br>
 
             <input type="file" name="inputpdf" size="50" maxlength="100000" accept="application/pdf,application/xml"

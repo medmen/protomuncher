@@ -1,10 +1,11 @@
 <?php
+
 namespace protomuncher\Controller;
 
 use Mlaphp\Request;
 use Mlaphp\Response;
 
-class Index
+class NotFoundController
 {
     protected $request, $response;
 
@@ -21,7 +22,7 @@ class Index
             PHP_URL_PATH
         );
 
-        $this->response->setView('index.html.php');
+        $this->response->setView('not-found.html.php');
         $this->response->setVars(array(
             'url_path' => $url_path,
         ));
