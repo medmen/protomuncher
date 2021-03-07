@@ -117,16 +117,13 @@ class PDFConverter implements IConverter
         $dom->find('img')->outertext = '';// Strip out all images, if any
         $dom->find('div p.ft00')->outertext = '';// Strip out MRI-Machine Name
 
-        /************** GTH ******************/
         foreach ($dom->find('div p.ft05') as $element) // Strip out Comments
         {
-            $converted = 0;
+            $converted = false;
             // Special: poppler puts some wanted values in p.ft05 element, catch those
-            foreach ($conf['validentries'] as $wanted) {
+            foreach ($this->config['parameters']['validentries'] as $wanted) {
                 if (preg_match('#\b' . preg_quote($wanted, '#') . '\b#i', $element->innertext)) {
-                    if ($conf['debug']) {
-                        trigger_error("DEBUG: cought bogus ft5 element $wanted in $element->innertext", E_USER_NOTICE);
-                    }
+                    $this->logger->debug("DEBUG: cought bogus ft5 element $wanted in $element->innertext");
                     //cought a target element, turn into p.ft03 element with altered name
                     $element->class = 'ft03';
                     $element->innertext = $wanted;
@@ -135,18 +132,14 @@ class PDFConverter implements IConverter
                 }
             }
 
-            if (!$converted) {
+            if (false == $converted) {
                 $element->outertext = '';
-                if ($conf['debug']) {
-                    trigger_error("Stripped 1 Comment..<br>\n", E_USER_NOTICE);
-                }
+                $this->logger->debug("Stripped 1 Comment..<br>\n");
             }
         }
 
         foreach ($dom->find('div p.ft01') as $protocol_full) {
-            if ($conf['debug']) {
-                trigger_error("parsing 1 protocol..<br>\n", E_USER_NOTICE);
-            }
+            $this->logger->debug("parsing 1 protocol..<br>\n");
             // extract the region/protocol/sequence
             $rps = $protocol_full->innertext;
             $protocol_elements = explode('\\', $rps);
@@ -173,17 +166,13 @@ class PDFConverter implements IConverter
         }
 
         foreach ($dom->find('p.ft02') as $arrival_time) {
-            if ($conf['debug']) {
-                trigger_error("extracting measurement time from $arrival_time->innertext ..<br>\n", E_USER_NOTICE);
-            }
+            $this->logger->debug("extracting measurement time from $arrival_time->innertext ..<br>\n");
             // innertext holds multiple strings in "name: value" format, separated by multiple blank spaces
             // if we split by 1 or more blank spaces, first item is 'TA', second item holds time value
             $parts = preg_split("/\s+/", $arrival_time->innertext);
             if ('TA:' == trim($parts[0])) {
                 $output_array[$region_proto_sequence]['messdauer'] = trim($parts[1]);
-                if ($conf['debug']) {
-                    trigger_error(" measurement time is .." . trim($parts[1]) . "<br>\n", E_USER_NOTICE);
-                }
+                $this->logger->debug(" measurement time is .." . trim($parts[1]) . "<br>\n");
             }
             break; // ne need to search for other occurrences
         }
@@ -191,9 +180,7 @@ class PDFConverter implements IConverter
         foreach ($dom->find('p.ft03') as $potential_hit) {
             $unvalidated_entry = trim(str_replace('&#160;', '', strtolower($potential_hit->innertext)));
             $unvalidated_entry = str_replace('.', ',', $unvalidated_entry); // german decimal separator
-            if ($conf['debug']) {
-                trigger_error("DEBUG: checkin if $unvalidated_entry is in valid entries ...<br>\n", E_USER_NOTICE);
-            }
+            $this->logger->debug("DEBUG: checkin if $unvalidated_entry is in valid entries ...<br>\n");
 
             if (in_array($unvalidated_entry, $conf['validentries'])) {
                 $actual_hit = $unvalidated_entry;
@@ -206,9 +193,7 @@ class PDFConverter implements IConverter
                     $unvalidated_entry = strtok($unvalidated_entry, " ");
                 }
                 $output_array[$region_proto_sequence][$actual_hit] = $unvalidated_entry;
-                if ($conf['debug']) {
-                    trigger_error("DEBUG: $actual_hit is a hit containing $unvalidated_entry !<br>\n", E_USER_NOTICE);
-                }
+                $this->logger->debug("DEBUG: $actual_hit is a hit containing $unvalidated_entry !<br>\n");
                 $hit = 0;
                 continue;
             }
@@ -217,5 +202,4 @@ class PDFConverter implements IConverter
         $dom->clear();
         return ($output_array);
     }
-
 }
