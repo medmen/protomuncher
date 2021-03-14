@@ -30,10 +30,15 @@ class PDFConverter implements IConverter
         $this->input = $input;
     }
 
+    /**
+     * @param $limits
+     * @param $max
+     * @return array of integers holding page numbers
+     */
     function get_limits($limits, $max): array
     {
         // see if limits holds a range
-        if (stristr($limits, '-')) {
+        if (is_string($limits) and stristr($limits, '-')) {
             [$start, $end] = explode('-', $limits);
             $start = intval(trim($start));
             $end = intval(trim($end));
@@ -61,7 +66,7 @@ class PDFConverter implements IConverter
             return (range($start, $end));
         }
 
-        if (stristr($limits, ',')) {
+        if (is_string($limits) and stristr($limits, ',')) {
             $items = array_map(
                 function ($value) {
                     return intval(trim($value)); // trim each value and turn into int
@@ -75,37 +80,50 @@ class PDFConverter implements IConverter
         }
 
         // assume its a single number
-        $limit = intval(trim($limits));
-        if ($limit > $max) {
-            $limit = $max;
+        if (is_int($limits)) {
+            if ($limits > $max or 0 == $limits) {
+                $limits = $max;
+            }
+            return (array($limits));
         }
-        return (array($limit));
+
     }
 
     function convert(): array
     {
-        $this->html = $this->input . '.html';
+        $return = array();
         $pdf = new Pdf($this->input, [
             'pdftohtml_path' => '/usr/bin/pdftohtml -c',
-            'pdfinfo_path' => '/usr/bin/pdfinfo']);
+            'pdfinfo_path' => '/usr/bin/pdfinfo',
+            'generate' => [
+                'ignoreImages' => true,
+            ],
+            'html' => [ // settings for processing html
+                'inlineCss' => false, // replaces css classes to inline css rules
+                'inlineImages' => false, // looks for images in html and replaces the src attribute to base64 hash
+                'onlyContent' => true, // takes from html body content only
+            ]
+        ]);
 
         $pdfInfo = $pdf->getInfo();
         $countPages = $pdf->countPages();
 
-        $pages = $this->get_limits($this->config['helpers']['limit_files'], $countPages);
+        $helpers = $this->config->getHelpers();
+        if (isset($helpers['limit_files'])) {
+            $limits = $helpers['limit_files'];
+        } else {
+            $limits = 0;
+        }
 
-        /**
-         * if (false === file_put_contents($this->html, $pdf->getHtml()->getAllPages())) {
-         * $this->logger->error('failed converting pdf to html');
-         * return array('success' => false, 'message' => 'failed converting pdf to html');
-         * }
-         */
+        $pages = $this->get_limits($limits, $countPages);
 
         if ($this->modality == 'MRT') {
-            foreach ($limits as $limit) {
-                $return[] = $this->convert_for_MRT($pdf->getHtml()->getPage($limit));
+            $html = $pdf->getHtml();
+            foreach ($pages as $pagenumber) {
+                $page = $html->getPage($pagenumber);
+                $page_extract = $this->convert_for_MRT($page);
+                $return = array_merge($return, $page_extract);
             }
-
         }
 
         return ($return);
@@ -114,14 +132,13 @@ class PDFConverter implements IConverter
     function convert_for_MRT($html): array
     {
         $dom = HtmlDomParser::str_get_html($html);
-        $dom->find('img')->outertext = '';// Strip out all images, if any
-        $dom->find('div p.ft00')->outertext = '';// Strip out MRI-Machine Name
+        $output_array = array(); // make sure we return an array
 
         foreach ($dom->find('div p.ft05') as $element) // Strip out Comments
         {
             $converted = false;
             // Special: poppler puts some wanted values in p.ft05 element, catch those
-            foreach ($this->config['parameters']['validentries'] as $wanted) {
+            foreach ($this->config->getParameters() as $wanted) {
                 if (preg_match('#\b' . preg_quote($wanted, '#') . '\b#i', $element->innertext)) {
                     $this->logger->debug("DEBUG: cought bogus ft5 element $wanted in $element->innertext");
                     //cought a target element, turn into p.ft03 element with altered name
@@ -178,18 +195,19 @@ class PDFConverter implements IConverter
         }
 
         foreach ($dom->find('p.ft03') as $potential_hit) {
+            // $hit = 0;
             $unvalidated_entry = trim(str_replace('&#160;', '', strtolower($potential_hit->innertext)));
             $unvalidated_entry = str_replace('.', ',', $unvalidated_entry); // german decimal separator
             $this->logger->debug("DEBUG: checkin if $unvalidated_entry is in valid entries ...<br>\n");
 
-            if (in_array($unvalidated_entry, $conf['validentries'])) {
+            if (in_array($unvalidated_entry, $this->config->getParameters())) {
                 $actual_hit = $unvalidated_entry;
                 $hit = 1;
                 continue;
             }
 
-            if (1 == $hit) {
-                if ($conf['stripunits']) {
+            if (isset($hit) and 1 == $hit) {
+                if ($this->config->getHelperByName('stripunits')) {
                     $unvalidated_entry = strtok($unvalidated_entry, " ");
                 }
                 $output_array[$region_proto_sequence][$actual_hit] = $unvalidated_entry;

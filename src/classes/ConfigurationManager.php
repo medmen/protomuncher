@@ -38,6 +38,7 @@ class ConfigurationManager
                 "geraet_id[=]" => $this->geraet
             ]);
 
+        //@Problem: dont create numeric arrays here - do name => value
         $helpers = $this->db->select("helperfields",
             [ //fields
                 "name",

@@ -35,15 +35,24 @@ class ConfigObject
         return $this->helpers;
     }
 
+    public function getHelperByName(string $name) // return value or false
+    {
+        if (isset($this->helpers[$name])) {
+            return $this->helpers[$name];
+        }
+
+        return false;
+    }
+
+
     /**
      * @param array $helpers
      */
     public function setHelpers(array $helpers): void
     {
-        foreach ($helpers as $key => $val) {
-            $this->helpers[$key] = $val;
+        foreach ($helpers as $helper) {
+            $this->helpers[$helper['name']] = $helper['value'];
         }
-        $this->helpers = $helpers;
     }
 
     /**
