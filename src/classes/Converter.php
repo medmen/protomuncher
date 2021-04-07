@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace protomuncher\classes;
@@ -27,67 +28,23 @@ class Converter
 
     public function convert(): array
     {
-        if ($this->filetype == 'pdf') {
-            $converter = new PDFConverter($this->logger, $this->config);
+        switch (true) {
+            case ($this->filetype == 'pdf' and $this->modality == "1"):
+                $converter = new MrtPdfConverter($this->logger, $this->config);
+                break;
+            case ($this->filetype == 'pdf' and $this->modality == "2"):
+                $converter = new CtPdfConverter($this->logger, $this->config);
+                break;
+            case ($this->filetype == 'xml' and $this->modality == "1"):
+                $converter = new MrtXmlConverter($this->logger, $this->config);
+                break;
+            case ($this->filetype == 'xml' and $this->modality == "2"):
+                $converter = new CtXmlConverter($this->logger, $this->config);
+                break;
+            default:
+                return(array('success' => false, 'message' => 'no matching converter found'));
         }
-
-        if ($this->filetype == 'xml') {
-            $converter = new XMLConverter($this->logger, $this->config);
-        }
-        $converter->setmodality($this->modality);
         $converter->setinput($this->upload);
         return ($converter->convert());
     }
-
-    // We start with parsing xml for MRT
-    private function convert_xml(): array
-    {
-        $return_arr = array();
-        $countIx = 0;
-        $prot_name = '';
-        $xml = new XMLReader();
-        $xml->open($this->upload);
-        /**
-         * To use xmlReader easily we have to make sure we parse at the outermost level of repeating elements.
-         * This is because xmlReaders next() option does not behave as one would think by intuition
-         */
-
-        while ($xml->read() && $xml->name != 'PrintProtocol') {
-        }
-
-        while ($xml->name == 'PrintProtocol') {
-            $element = new SimpleXMLElement($xml->readInnerXML()); //
-
-            $proto_path = explode('\\', strval($element->SubStep->ProtHeaderInfo->HeaderProtPath));
-
-            $prod = array(
-                'region' => $proto_path[3],
-                'protocol' => $proto_path[4] . '-' . $proto_path[5],
-                'sequence' => $proto_path[6],
-                'TA' => strval($element->SubStep->ProtHeaderInfo->HeaderProperty),
-            );
-
-            //@TODO: fetch those from config
-            $target_elements = array('Schichten', 'Phasenkod.-Richt.', 'FoV Auslese', 'TR', 'TE');
-
-            foreach ($element->SubStep->Card as $card) {
-                foreach ($card->ProtParameter as $seq_property) {
-                    if (in_array(strval($seq_property->Label), $target_elements)) {
-                        $label = strval($seq_property->Label);
-                        $value = strval($seq_property->ValueAndUnit);
-                        $prod[$label] = $value;
-                    }
-                }
-            }
-
-            $return_arr[] = $prod;            // print_r($prod);
-            if ($countIx == 4) break; // cut loops for testing
-
-            $countIx++;
-            $xml->next('PrintProtocol');
-            unset($element);
-        }
-        return ($return_arr);
-    }
-
 }

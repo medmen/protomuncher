@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace protomuncher\Controller;
@@ -45,8 +46,11 @@ class UploadController
             return $this->response;
         }
 
-        // $result holds all necessary data (we hope) - cnvert that into a data object???
-        //$converter_data = new ConverterDataObject($result);
+        $this->response->setVars(array(
+            'success' => 'Hochladen erfolgreich',
+            'filetype' => $result['filetype'],
+            'modality' => $result['modality'],
+        ));
 
         $converter = new Converter($result, $this->logger, $this->config);
         $raw_data_array = $converter->convert();
@@ -55,8 +59,10 @@ class UploadController
         $formatted_result = $formatter->format_pretty($raw_data_array);
 
         $this->response->setVars(array(
-            'success' => 'erfolgreich verwandelt --- magisch !!!',
-            'res' => $formatted_result,
+            'success' => 'Hochladen erfolgreich' . "\n" . $formatted_result['message'],
+            'filetype' => $result['filetype'],
+            'modality' => $result['modality'],
+            'res' => $formatted_result['data']
         ));
 
         return ($this->response);

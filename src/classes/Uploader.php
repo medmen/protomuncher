@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace protomuncher\classes;
 
 use Mlaphp\Request;
@@ -11,7 +13,7 @@ class Uploader
 
     public function __construct(Request $request, Logger $logger)
     {
-        $this->uploaddir = __DIR__ . '/../../uploads';
+        $this->uploaddir = dirname(__DIR__) . '/../uploads';
         $this->modality = $request->post['geraet'];
         $this->request = $request->files['inputpdf'];
         $this->logger = $logger;
@@ -55,6 +57,12 @@ class Uploader
 
     private function is_valid_upload(): bool
     {
+        if (!isset($this->request)) {
+            $this->logger->error('No Upload');
+            $this->error_message[] = 'No upload issued';
+            return false;
+        }
+
         if (!is_array($this->request)) {
             $this->logger->error('No Upload');
             $this->error_message[] = 'No upload issued';
@@ -123,9 +131,11 @@ class Uploader
     private function move_upload(): bool
     {
         // shortcut for testing purpose
+        /**
         if ($this->logger['name'] === 'test') {
             return true;
         }
+        **/
 
         // hardcoded upload destination for now.. @TODO: make destination configurable,
         if (move_uploaded_file($this->request['tmp_name'], $this->uploadtarget)) {
@@ -136,7 +146,6 @@ class Uploader
             $this->error_message[] = 'Failed to move upload ' . $this->request['name'];
             return false;
         }
-
     }
 
     private function set_filetype(): string

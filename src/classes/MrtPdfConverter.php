@@ -1,14 +1,20 @@
 <?php
+
 declare(strict_types=1);
 
 namespace protomuncher\classes;
-
 
 use KubAT\PhpSimple\HtmlDomParser;
 use Monolog\Logger;
 use TonchikTm\PdfToHtml\Pdf;
 
-class PDFConverter implements IConverter
+use function protomuncher\check_if_changed;
+use function protomuncher\parse_protocol;
+use function protomuncher\parse_region;
+use function protomuncher\parse_row;
+use function protomuncher\parse_sequence;
+
+class MrtPdfConverter implements IConverter
 {
     private $modality, $input, $logger, $config;
 
@@ -18,11 +24,6 @@ class PDFConverter implements IConverter
         $this->logger = $logger;
         $this->logger->notice('Logger is now Ready in class ' . __CLASS__);
         $this->config = $config;
-    }
-
-    function setmodality(string $modality): void
-    {
-        $this->modality = $modality;
     }
 
     function setinput(string $input): void
@@ -70,7 +71,9 @@ class PDFConverter implements IConverter
             $items = array_map(
                 function ($value) {
                     return intval(trim($value)); // trim each value and turn into int
-                }, explode(',', $limits));
+                },
+                explode(',', $limits)
+            );
             foreach ($items as $item) {
                 if ($item > $max) {
                     unset($item);
@@ -86,7 +89,6 @@ class PDFConverter implements IConverter
             }
             return (array($limits));
         }
-
     }
 
     function convert(): array
@@ -98,6 +100,7 @@ class PDFConverter implements IConverter
             'generate' => [
                 'ignoreImages' => true,
             ],
+            'outputDir' => dirname(__DIR__) . '/uploads/' . uniqid(), // output dir
             'html' => [ // settings for processing html
                 'inlineCss' => false, // replaces css classes to inline css rules
                 'inlineImages' => false, // looks for images in html and replaces the src attribute to base64 hash
@@ -117,13 +120,12 @@ class PDFConverter implements IConverter
 
         $pages = $this->get_limits($limits, $countPages);
 
-        if ($this->modality == 'MRT') {
-            $html = $pdf->getHtml();
-            foreach ($pages as $pagenumber) {
-                $page = $html->getPage($pagenumber);
-                $page_extract = $this->convert_for_MRT($page);
-                $return = array_merge($return, $page_extract);
-            }
+        $html = $pdf->getHtml();
+        foreach ($pages as $pagenumber) {
+            $this->logger->notice('converting page ' . $pagenumber);
+            $page = $html->getPage($pagenumber);
+            $page_extract = $this->convert_for_MRT($page);
+            $return = array_merge($return, $page_extract);
         }
 
         return ($return);
@@ -133,9 +135,9 @@ class PDFConverter implements IConverter
     {
         $dom = HtmlDomParser::str_get_html($html);
         $output_array = array(); // make sure we return an array
+        $region_proto_sequence = false;
 
-        foreach ($dom->find('div p.ft05') as $element) // Strip out Comments
-        {
+        foreach ($dom->find('div p.ft05') as $element) { // Strip out Comments
             $converted = false;
             // Special: poppler puts some wanted values in p.ft05 element, catch those
             foreach ($this->config->getParameters() as $wanted) {
@@ -156,33 +158,43 @@ class PDFConverter implements IConverter
         }
 
         foreach ($dom->find('div p.ft01') as $protocol_full) {
-            $this->logger->debug("parsing 1 protocol..<br>\n");
             // extract the region/protocol/sequence
             $rps = $protocol_full->innertext;
             $protocol_elements = explode('\\', $rps);
-            if (count($protocol_elements) > 5) {
-                $sequence = $protocol_elements[6];
-                $protocol = $protocol_elements[4] . '_' . $protocol_elements[5];
-                $region = $protocol_elements[3];
-                $region_proto_sequence = $region . '_' . $protocol . '_' . $sequence;
 
-                $output_array[$region_proto_sequence]['region'] = $region;
-                $output_array[$region_proto_sequence]['protocol'] = $protocol;
-                $output_array[$region_proto_sequence]['sequence'] = strtoupper(str_replace('_', ' ', $sequence));
+            if (count($protocol_elements) < 6) {
+                continue; // skip loop, this is no full protocol
+            }
+            $this->logger->debug("parsing 1 protocol..<br>\n");
 
-                // explode the sequence-name, it usually holds hints for measurment direction
-                // TODO: find a more adequate way to extract that info
-                $seq_parts = explode('_', $sequence);
-                foreach ($seq_parts as $part) {
-                    if (in_array(strtolower(trim($part)), array('tra', 'sag', 'cor'))) {
-                        $output_array[$region_proto_sequence]['direction'] = strtolower(trim($part));
-                        break;
-                    }
+            $sequence = $protocol_elements[6];
+            $protocol = $protocol_elements[4] . '_' . $protocol_elements[5];
+            $region = $protocol_elements[3];
+            $region_proto_sequence = $region . '_' . $protocol . '_' . $sequence;
+
+            $output_array[$region_proto_sequence]['region'] = $region;
+            $output_array[$region_proto_sequence]['protocol'] = $protocol;
+            $output_array[$region_proto_sequence]['sequence'] = strtoupper(str_replace('_', ' ', $sequence));
+
+            // explode the sequence-name, it usually holds hints for measurment direction
+            // TODO: find a more adequate way to extract that info
+            $seq_parts = explode('_', $sequence);
+            foreach ($seq_parts as $part) {
+                if (in_array(strtolower(trim($part)), array('tra', 'sag', 'cor'))) {
+                    $output_array[$region_proto_sequence]['direction'] = strtolower(trim($part));
+                    break;
                 }
+            }
+
+            if (!isset($output_array[$region_proto_sequence]['direction'])) {
+                $output_array[$region_proto_sequence]['direction'] = '';
             }
         }
 
         foreach ($dom->find('p.ft02') as $arrival_time) {
+            if (false == $region_proto_sequence) {
+                continue;
+            }
             $this->logger->debug("extracting measurement time from $arrival_time->innertext ..<br>\n");
             // innertext holds multiple strings in "name: value" format, separated by multiple blank spaces
             // if we split by 1 or more blank spaces, first item is 'TA', second item holds time value
@@ -195,7 +207,9 @@ class PDFConverter implements IConverter
         }
 
         foreach ($dom->find('p.ft03') as $potential_hit) {
-            // $hit = 0;
+            if (false == $region_proto_sequence) {
+                continue;
+            }
             $unvalidated_entry = trim(str_replace('&#160;', '', strtolower($potential_hit->innertext)));
             $unvalidated_entry = str_replace('.', ',', $unvalidated_entry); // german decimal separator
             $this->logger->debug("DEBUG: checkin if $unvalidated_entry is in valid entries ...<br>\n");

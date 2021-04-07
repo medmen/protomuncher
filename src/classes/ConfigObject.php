@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace protomuncher\classes;
@@ -24,7 +25,8 @@ class ConfigObject
 
     public function getParameters(): array
     {
-        return $this->parameters;
+        // always return lowercase parameters!
+        return array_map('strtolower', $this->parameters);
     }
 
     /**
@@ -63,5 +65,4 @@ class ConfigObject
     {
         $this->parameters = array_values($parameters);
     }
-
 }

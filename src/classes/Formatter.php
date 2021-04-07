@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace protomuncher\classes;
@@ -26,68 +27,67 @@ class Formatter
         $this->logger->notice('Logger is now Ready in class ' . __CLASS__);
     }
 
-    public function format_pretty($field_arr): array
+    public function format_pretty($data): array
     {
-        try {
-            if (empty($field_arr)) {
-                throw new ErrorException('missing argument');
-            }
-            if (is_array($field_arr) and count($field_arr) < 4) {
-                throw new ErrorException('missing argument');
-            }
-        } catch (ErrorException $e) {
-            return array('success' => false,
-                'message' => $e->getMessage()
-            );
-        }
-
+        $data = array_values($data);
+        $pretty = '';
 
         if (!$this->old_protocol) {
             $this->old_protocol = '';
         }
+
         if (!$this->old_region) {
             $this->old_region = '';
         }
 
         $this->pretty = '';
 
-        $headers_arr = array_keys($data);
+        $headers_arr = array_keys($data[0]);
+        // remove region an protocol from headers
+        $headers_arr = array_filter(
+            $headers_arr,
+            fn ($val) => !in_array($val, array('region', 'protocol'))
+        );
 
-        switch ($this->format) {
-            case 'html':
-                if ($data['region'] !== $old_region) {
-                    $pretty .= '<h1>' . $data['region'] . '</h1>';
-                    $old_region = $data['region'];
-                    $old_protocol = '';
-                }
+        foreach ($data as $row) {
+            switch ($this->format) {
+                case 'html':
+                    if ($row['region'] !== $this->old_region) {
+                        $pretty .= '<h1>' . $row['region'] . '</h1>';
+                        $this->old_region = $row['region'];
+                        $this->old_protocol = '';
+                    }
 
-                if ($data['protocol'] !== $old_protocol) {
-                    $pretty .= '</table>' . PHP_EOL;
-                    $pretty .= '<h2>' . $data['protocol'] . '</h2>' . PHP_EOL;
-                    $pretty .= '<table>.PHP_EOL<thead>.PHP_EOL<tr><th>' . implode('</th><th>', $headers_arr) . '</th></tr>.PHP_EOL</thead>.PHP_EOL<tfoot>a nice footer</tfoot>' . PHP_EOL;
-                }
-                $pretty .= '<tr><td>' . implode('</td>' . PHP_EOL . '<td>', $data) . '</td></tr>' . PHP_EOL;
-                break;
-            case 'md':
-            default:
-                if ($data['region'] !== $old_region) {
-                    $pretty .= '====== ' . $data['region'] . ' ======' . PHP_EOL;
-                    $old_region = $data['region'];
-                    $old_protocol = '';
-                }
+                    if ($row['protocol'] !== $this->old_protocol) {
+                        $pretty .= '</table>' . PHP_EOL;
+                        $pretty .= '<h2>' . $row['protocol'] . '</h2>' . PHP_EOL;
+                        $pretty .= '<table>.PHP_EOL<thead>.PHP_EOL<tr><th>' . implode('</th><th>', $headers_arr) . '</th></tr>.PHP_EOL</thead>.PHP_EOL<tfoot>a nice footer</tfoot>' . PHP_EOL;
+                        $this->old_protocol = $row['protocol'];
+                    }
+                    unset($row['region'], $row['protocol']);
+                    $pretty .= '<tr><td>' . implode('</td>' . PHP_EOL . '<td>', $row) . '</td></tr>' . PHP_EOL;
+                    break;
+                case 'md':
+                default:
+                    if ($row['region'] !== $this->old_region) {
+                        $pretty .= '====== ' . $row['region'] . ' ======' . PHP_EOL;
+                        $this->old_region = $row['region'];
+                        $this->old_protocol = '';
+                    }
 
-                if ($data['protocol'] !== $old_protocol) {
-                    $pretty .= '===== ' . $data['protocol'] . ' =====' . PHP_EOL;
-                    $pretty .= '^ ' . implode(' ^ ', $headers_arr) . ' ^' . PHP_EOL;
-                }
-                $pretty .= '|' . implode(' | ', $data) . ' |' . PHP_EOL;
-                break;
+                    if ($row['protocol'] !== $this->old_protocol) {
+                        $pretty .= '===== ' . $row['protocol'] . ' =====' . PHP_EOL;
+                        $pretty .= '^ ' . implode(' ^ ', $headers_arr) . ' ^' . PHP_EOL;
+                        $this->old_protocol = $row['protocol'];
+                    }
+                    unset($row['region'], $row['protocol']);
+                    $pretty .= '|' . implode(' | ', $row) . ' |' . PHP_EOL;
+                    break;
+            }
         }
         return array('success' => true,
             'message' => 'Formatierung der Rohdaten als ' . $this->format . ' erfolgreich',
             'data' => $pretty
         );
     }
-
-
 }

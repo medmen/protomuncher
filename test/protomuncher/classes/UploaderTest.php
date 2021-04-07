@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace protomuncher;
@@ -46,7 +47,7 @@ class UploaderTest extends TestCase
         $request->files = $files;
         $request->post['geraet'] = 1;
         $logger = new Logger('test');
-        $logger->pushHandler(new NoopHandler);
+        $logger->pushHandler(new NoopHandler());
         $uploader = new classes\Uploader($request, $logger);
 
         //act
