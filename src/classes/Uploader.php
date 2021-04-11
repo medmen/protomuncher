@@ -101,20 +101,23 @@ class Uploader
 
     private function clear_upload_dir(): bool
     {
+        // call array map with array($this, 'function_name') to point to private func
         $res = array_map(array($this, 'delete_file'), glob($this->uploaddir . '/*')); // glob leaves hidden files alone, just as we want
-        if (is_array($res)) {
-            if (count($res) == 0) {
-                return true;
-            }
-            $this->logger->notice('clear_upload_dir() returned array ' . var_export($res));
-            if (in_array(false, $res)) {
-                $this->error_message[] = 'Could not clear uploads directory';
-                return false;
-            }
+        // if something went wrong, bail out
+        if (!is_array($res)) {
+            $this->logger->error('clear_upload_dir() did not return bool but ' . gettype($res) . ' with value ' . var_export($res));
+            return false;
         }
-        // we should not get here, but lets be sure
-        $this->logger->error('clear_upload_dir() did not return bool but ' . gettype($res) . ' with value ' . var_export($res));
-        return false;
+
+        if (count($res) == 0) {
+            return true;
+        }
+        $this->logger->notice('clear_upload_dir() returned array ' . var_export($res));
+        if (in_array(false, $res)) {
+            $this->error_message[] = 'Could not clear uploads directory';
+            return false;
+        }
+        return true;
     }
 
     private function delete_file($afile)
@@ -122,30 +125,30 @@ class Uploader
         if (unlink($afile)) {
             $this->logger->notice('Successfully deleted old upload ' . $afile);
             return true;
-        } else {
-            $this->logger->error('Could not delete old upload ' . $afile);
-            return false;
         }
+
+        $this->logger->error('Could not delete old upload ' . $afile);
+        return false;
     }
 
     private function move_upload(): bool
     {
         // shortcut for testing purpose
         /**
-        if ($this->logger['name'] === 'test') {
-            return true;
-        }
-        **/
+         * if ($this->logger['name'] === 'test') {
+         * return true;
+         * }
+         **/
 
         // hardcoded upload destination for now.. @TODO: make destination configurable,
         if (move_uploaded_file($this->request['tmp_name'], $this->uploadtarget)) {
             $this->logger->notice('Successfull file upload for ' . $this->request['name']);
             return true;
-        } else {
-            $this->logger->error('Failed to move upload ' . $this->request['name'] . ' to ' . $this->uploadtarget);
-            $this->error_message[] = 'Failed to move upload ' . $this->request['name'];
-            return false;
         }
+
+        $this->logger->error('Failed to move upload ' . $this->request['name'] . ' to ' . $this->uploadtarget);
+        $this->error_message[] = 'Failed to move upload ' . $this->request['name'];
+        return false;
     }
 
     private function set_filetype(): string

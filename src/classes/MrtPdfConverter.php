@@ -8,12 +8,6 @@ use KubAT\PhpSimple\HtmlDomParser;
 use Monolog\Logger;
 use TonchikTm\PdfToHtml\Pdf;
 
-use function protomuncher\check_if_changed;
-use function protomuncher\parse_protocol;
-use function protomuncher\parse_region;
-use function protomuncher\parse_row;
-use function protomuncher\parse_sequence;
-
 class MrtPdfConverter implements IConverter
 {
     private $modality, $input, $logger, $config;
