@@ -10,7 +10,7 @@ use Monolog\Handler\NoopHandler;
 use Monolog\Logger;
 use PHPUnit\Framework\TestCase;
 
-class MrtPdfConverterTest extends TestCase
+class MrtXmlConverterTest extends TestCase
 {
     private ConfigObject $config;
     private Logger $logger;
@@ -39,8 +39,8 @@ class MrtPdfConverterTest extends TestCase
 
     public function testMriConvert()
     {
-        $this->converter = new MrtPdfConverter($this->logger, $this->config);
-        $this->converter->setinput(dirname(__DIR__) . '/fixtures/mrt_open.pdf');
+        $this->converter = new MrtXmlConverter($this->logger, $this->config);
+        $this->converter->setinput(dirname(__DIR__) . '/fixtures/MRT.xml');
         $result_array = $this->converter->convert();
 
         $this->assertIsArray($result_array);

@@ -10,7 +10,7 @@ use Monolog\Handler\NoopHandler;
 use Monolog\Logger;
 use PHPUnit\Framework\TestCase;
 
-class MrtPdfConverterTest extends TestCase
+class CtXmlConverterTest extends TestCase
 {
     private ConfigObject $config;
     private Logger $logger;
@@ -21,7 +21,7 @@ class MrtPdfConverterTest extends TestCase
         $this->logger = new Logger('test');
         $this->logger->pushHandler(new NoopHandler());
 
-        $geraet = 1; // 1=MRT, 2=CT
+        $geraet = 2; // 1=MRT, 2=CT
         $this->config = new ConfigObject($geraet);
 
         $db = dirname(__DIR__) . '/../../conf/config.sqlite';
@@ -37,10 +37,10 @@ class MrtPdfConverterTest extends TestCase
         }
     }
 
-    public function testMriConvert()
+    public function testCtConvert()
     {
-        $this->converter = new MrtPdfConverter($this->logger, $this->config);
-        $this->converter->setinput(dirname(__DIR__) . '/fixtures/mrt_open.pdf');
+        $this->converter = new CtXmlConverter($this->logger, $this->config);
+        $this->converter->setinput(dirname(__DIR__) . '/fixtures/CT.xml');
         $result_array = $this->converter->convert();
 
         $this->assertIsArray($result_array);
